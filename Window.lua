@@ -41,6 +41,7 @@ function Window.new(title)
 	frame.Size = UDim2.new(0.50457, 0, 0.78704, 0)
 	frame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	frame.BackgroundTransparency = 0.2
+	frame.Draggable = true
 
 	local frameCorner = Instance.new("UICorner")
 	frameCorner.Parent = frame
@@ -79,25 +80,6 @@ function Window.new(title)
 	titleLbl.Text = title or "window"
 	titleLbl.Position = UDim2.new(0.02069, 0, 0.015, 0)
 
-	local hideBtn = Instance.new("TextButton")
-	hideBtn.Parent = frame
-	hideBtn.TextWrapped = true
-	hideBtn.SizeConstraint = Enum.SizeConstraint.RelativeYY
-	hideBtn.BorderSizePixel = 0
-	hideBtn.Modal = true
-	hideBtn.TextScaled = true
-	hideBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
-	hideBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	hideBtn.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-	hideBtn.ZIndex = 4
-	hideBtn.AnchorPoint = Vector2.new(1, 0)
-	hideBtn.BackgroundTransparency = 0.95
-	hideBtn.Size = UDim2.new(0.06923, 0, 0.09, 0)
-	hideBtn.Text = "X"
-	hideBtn.Name = "HideButton"
-	hideBtn.Position = UDim2.new(1, 0, 0, 0)
-	Instance.new("UICorner").Parent = hideBtn
-
 	local scroll = Instance.new("ScrollingFrame")
 	scroll.Parent = frame
 	scroll.Active = true
@@ -116,17 +98,25 @@ function Window.new(title)
 	layout.Padding = UDim.new(0, 15)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 
+	self._frame = frame
 	self._scroll = scroll
 	self._visible = true
 
-	hideBtn.MouseButton1Click:Connect(function()
-		self._visible = not self._visible
-		scroll.Visible = self._visible
-		titleLbl.Visible = self._visible
-		hideBtn.Text = self._visible and "X" or "+"
-	end)
-
 	return self
+end
+
+function Window:Toggle()
+	self._visible = not self._visible
+	self._frame.Visible = self._visible
+end
+
+function Window:SetVisible(v)
+	self._visible = v
+	self._frame.Visible = v
+end
+
+function Window:Destroy()
+	self._frame.Parent:Destroy()
 end
 
 function Window:AddToggle(labelText, default, callback)
@@ -347,12 +337,111 @@ function Window:AddLabel(text)
 	lbl.Text = text
 end
 
-function Window:SetVisible(v)
-	self._scroll.Parent.Visible = v
-end
+function Window:AddDropdown(labelText, options, callback)
+	self._order += 1
 
-function Window:Destroy()
-	self._scroll.Parent.Parent:Destroy()
+	local row = Instance.new("Frame")
+	row.Parent = self._scroll
+	row.BorderSizePixel = 0
+	row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	row.BackgroundTransparency = 0.95
+	row.Size = UDim2.new(0, 436, 0, 36)
+	row.LayoutOrder = self._order
+	Instance.new("UICorner").Parent = row
+
+	local divider = Instance.new("Frame")
+	divider.Parent = row
+	divider.BorderSizePixel = 0
+	divider.BackgroundColor3 = Color3.fromRGB(88, 88, 88)
+	divider.AnchorPoint = Vector2.new(0.5, 0.5)
+	divider.Size = UDim2.new(0.00917, 0, 1.05556, 0)
+	divider.Position = UDim2.new(0.5, 0, 0.5, 0)
+	divider.BackgroundTransparency = 0.8
+
+	local lbl = Instance.new("TextLabel")
+	lbl.Parent = row
+	lbl.TextWrapped = true
+	lbl.TextStrokeTransparency = 0.5
+	lbl.BorderSizePixel = 0
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.TextScaled = true
+	lbl.BackgroundTransparency = 1
+	lbl.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+	lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+	lbl.AnchorPoint = Vector2.new(0, 0.5)
+	lbl.Size = UDim2.new(1, 0, 0.7, 0)
+	lbl.Position = UDim2.new(0.01147, 0, 0.5, 0)
+	lbl.Text = labelText
+
+	local header = Instance.new("TextButton")
+	header.Parent = row
+	header.BorderSizePixel = 0
+	header.TextScaled = true
+	header.TextStrokeTransparency = 0.5
+	header.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+	header.AnchorPoint = Vector2.new(1, 0.5)
+	header.BackgroundTransparency = 0.5
+	header.BackgroundColor3 = Color3.fromRGB(118, 255, 112)
+	header.TextColor3 = Color3.fromRGB(255, 255, 255)
+	header.Size = UDim2.new(0.25, 0, 0.77778, 0)
+	header.Position = UDim2.new(0.98165, 0, 0.5, 0)
+	header.Text = options[1] or "Select"
+	Instance.new("UICorner").Parent = header
+
+	self._order += 1
+
+	local dropList = Instance.new("Frame")
+	dropList.Parent = self._scroll
+	dropList.BorderSizePixel = 0
+	dropList.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	dropList.BackgroundTransparency = 0.3
+	dropList.Size = UDim2.new(0, 436, 0, #options * 30)
+	dropList.LayoutOrder = self._order
+	dropList.Visible = false
+	Instance.new("UICorner").Parent = dropList
+
+	local optLayout = Instance.new("UIListLayout")
+	optLayout.Parent = dropList
+	optLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	optLayout.Padding = UDim.new(0, 2)
+
+	local selected = options[1]
+
+	for i, optText in ipairs(options) do
+		local optBtn = Instance.new("TextButton")
+		optBtn.Parent = dropList
+		optBtn.BorderSizePixel = 0
+		optBtn.TextScaled = true
+		optBtn.TextStrokeTransparency = 0.5
+		optBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+		optBtn.BackgroundTransparency = 0.7
+		optBtn.BackgroundColor3 = Color3.fromRGB(118, 255, 112)
+		optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		optBtn.Size = UDim2.new(1, 0, 0, 30)
+		optBtn.LayoutOrder = i
+		optBtn.Text = optText
+		Instance.new("UICorner").Parent = optBtn
+
+		optBtn.MouseButton1Click:Connect(function()
+			selected = optText
+			header.Text = optText
+			dropList.Visible = false
+			if callback then callback(selected) end
+		end)
+	end
+
+	header.MouseButton1Click:Connect(function()
+		dropList.Visible = not dropList.Visible
+	end)
+
+	return {
+		GetSelected = function() return selected end,
+		SetSelected = function(v)
+			selected = v
+			header.Text = v
+			if callback then callback(selected) end
+		end
+	}
 end
 
 return Window
