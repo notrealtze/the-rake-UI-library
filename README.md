@@ -18,7 +18,7 @@ local Window = loadstring(game:HttpGet("https://raw.githubusercontent.com/notrea
 local win = Window.new("My Script")
 ```
 
-`Window.new(title: string)` creates and renders the GUI immediately. The **X** button in the top-right collapses and expands the window at runtime.
+`Window.new(title: string)` creates and renders the GUI immediately.
 
 ---
 
@@ -122,11 +122,56 @@ win:AddLabel("-- MOVEMENT --")
 
 ---
 
+### Dropdown
+
+```lua
+local dropdown = win:AddDropdown(label, options, callback)
+```
+
+| Parameter  | Type       | Description                                          |
+|------------|------------|------------------------------------------------------|
+| `label`    | `string`   | Text shown on the left side of the row               |
+| `options`  | `table`    | Array of strings to populate the dropdown list       |
+| `callback` | `function` | Called with `(selected: string)` when an option is picked |
+
+Clicking the green header button toggles the option list open/closed. Picking an option closes the list, updates the header text, and fires the callback. The first entry in `options` is selected by default.
+
+**Returns** a controller table:
+
+```lua
+dropdown.GetSelected()     -- returns the currently selected string
+dropdown.SetSelected(str)  -- sets selection by value and fires callback
+```
+
+**Example:**
+
+```lua
+local teamPick = win:AddDropdown("TEAM", {"Survivors", "Rake", "Spectator"}, function(value)
+    print("Selected team:", value)
+end)
+```
+
+---
+
 ## Utility Methods
 
 ```lua
+win:Toggle()          -- flip window visibility (same as the X/+ header button)
 win:SetVisible(bool)  -- show or hide the entire GUI
 win:Destroy()         -- remove the GUI entirely
+```
+
+### UI Toggle (Header Button)
+
+The window header always contains an **X / +** button in the top-right corner. Clicking it calls `win:Toggle()` internally, collapsing the window to just the title bar and expanding it again. You can call `win:Toggle()` from your own code to replicate this behavior programmatically.
+
+```lua
+-- collapse the window from a keybind
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        win:Toggle()
+    end
+end)
 ```
 
 ---
@@ -163,6 +208,12 @@ win:AddTextBox("WALK SPEED", "16", function(value)
     end
 end)
 
+win:AddLabel("-- MISC --")
+
+win:AddDropdown("TEAM", {"Survivors", "Rake", "Spectator"}, function(value)
+    print("Team set to:", value)
+end)
+
 win:AddButton("RESET CHARACTER", function()
     game:GetService("Players").LocalPlayer.Character.Humanoid.Health = 0
 end)
@@ -176,4 +227,7 @@ end)
 - `Window.new` parents the ScreenGui to `CoreGui` via `syn.protect_gui` if available, then `gethui()`, then raw `CoreGui` as a final fallback. The ScreenGui is assigned a randomised name using Unicode private-use area characters to prevent detection via `FindFirstChild`.
 - The **X** / **+** toggle in the window header is always present and cannot be removed.
 - `TextBox` callback fires only on **Enter** (`FocusLost` with `enterPressed = true`). Blurring without pressing Enter does not trigger it.
+- `Dropdown` inserts two layout entries — the header row and the option list frame. The option list is hidden by default and expands in-place inside the scroll frame when opened.
 
+
+This docs was made by ai the code wasn't 
