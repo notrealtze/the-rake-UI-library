@@ -11,9 +11,10 @@ function Window.new(title)
 	sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	sg.ResetOnSpawn = false
 
+	local pua = {"","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""}
 	local scrambled = ""
 	for i = 1, 12 do
-		scrambled = scrambled .. string.char(math.random(0xE000, 0xE07F))
+		scrambled = scrambled .. pua[math.random(1, #pua)]
 	end
 	sg.Name = scrambled
 
